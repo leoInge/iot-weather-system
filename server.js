@@ -76,24 +76,29 @@ class WeatherSubscriber {
         });
     }
 
-    async subscribeToWeatherUpdates() {
-        const subscriber = this.redisClient.duplicate();
-        await subscriber.connect();
+    // En server.js, modifica la función subscribeToWeatherUpdates:
+async subscribeToWeatherUpdates() {
+    const subscriber = this.redisClient.duplicate();
+    await subscriber.connect();
 
-        await subscriber.subscribe('weather-updates', (message) => {
-            try {
-                const weatherData = JSON.parse(message);
-                console.log('Nuevos datos recibidos:', weatherData.city);
-                
-                // Emitir a todos los clientes conectados
-                this.io.emit('weather-update', weatherData);
-            } catch (error) {
-                console.error('Error procesando mensaje:', error);
-            }
-        });
+    console.log('🔍 Suscriptor Redis conectado, escuchando canal: weather-updates');
 
-        console.log('Subscriptor escuchando en canal: weather-updates');
-    }
+    await subscriber.subscribe('weather-updates', (message) => {
+        try {
+            const weatherData = JSON.parse(message);
+            console.log('📤 Enviando datos a clientes:', weatherData.city, weatherData.temperature + '°C');
+            
+            // Emitir a todos los clientes conectados
+            this.io.emit('weather-update', weatherData);
+            
+            // Log de clientes conectados
+            const clientCount = this.io.engine.clientsCount;
+            console.log(`👥 Clientes conectados: ${clientCount}`);
+        } catch (error) {
+            console.error('❌ Error procesando mensaje:', error);
+        }
+    });
+}
 
     async init() {
         await this.redisClient.connect();

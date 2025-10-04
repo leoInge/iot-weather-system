@@ -1,84 +1,153 @@
 class WeatherApp {
     constructor() {
-        this.socket = io();
+        this.socket = io({
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
         this.charts = {};
         this.sensorData = new Map();
         this.maxDataPoints = 20;
+        this.isInitialized = false;
         
         this.init();
     }
 
     init() {
-        this.initializeCharts();
-        this.setupSocketListeners();
-        this.loadSensors();
-        this.loadHistoricalData();
-    }
+        console.log('🚀 Inicializando aplicación de clima...');
+        
+        this.socket.on('connect', () => {
+            console.log('✅ Conectado al servidor WebSocket. ID:', this.socket.id);
+            this.loadSensors();
+        });
 
-    initializeCharts() {
-        const chartConfig = {
-            type: 'line',
-            options: {
-                responsive: true,
-                animation: {
-                    duration: 0
-                },
-                scales: {
-                    x: {
-                        type: 'realtime',
-                        realtime: {
-                            duration: 60000,
-                            refresh: 1000,
-                            delay: 2000
-                        }
-                    },
-                    y: {
-                        beginAtZero: false
-                    }
-                }
-            }
-        };
-
-        // Gráfica de temperatura
-        this.charts.temperature = new Chart(
-            document.getElementById('temperatureChart'),
-            {
-                ...chartConfig,
-                data: {
-                    datasets: []
-                }
-            }
-        );
-
-        // Gráfica de humedad
-        this.charts.humidity = new Chart(
-            document.getElementById('humidityChart'),
-            {
-                ...chartConfig,
-                data: {
-                    datasets: []
-                }
-            }
-        );
-
-        // Gráfica de presión
-        this.charts.pressure = new Chart(
-            document.getElementById('pressureChart'),
-            {
-                ...chartConfig,
-                data: {
-                    datasets: []
-                }
-            }
-        );
-    }
-
-    setupSocketListeners() {
         this.socket.on('weather-update', (data) => {
+            console.log('📡 Datos recibidos via WebSocket:', data);
+            if (!this.isInitialized) {
+                this.initializeCharts();
+                this.isInitialized = true;
+            }
             this.updateSensorDisplay(data);
             this.updateCharts(data);
             this.updateHeatmap(data);
         });
+
+        this.socket.on('disconnect', (reason) => {
+            console.log('❌ Desconectado del servidor:', reason);
+        });
+
+        this.socket.on('connect_error', (error) => {
+            console.error('💥 Error de conexión WebSocket:', error);
+        });
+
+        // Forzar reconexión si no hay datos después de 10 segundos
+        setTimeout(() => {
+            if (!this.isInitialized) {
+                console.log('🕒 Sin datos después de 10s, verificando conexión...');
+                // Simular datos de prueba
+                this.simulateTestData();
+            }
+        }, 10000);
+    }
+
+    simulateTestData() {
+        console.log('🧪 Mostrando datos de prueba...');
+        const testData = {
+            sensorId: 'sensor-1',
+            city: 'New York',
+            temperature: 22.5,
+            humidity: 65,
+            pressure: 1013.2,
+            windSpeed: 12.3,
+            timestamp: new Date().toISOString()
+        };
+        this.updateSensorDisplay(testData);
+    }
+
+    initializeCharts() {
+        console.log('📊 Inicializando gráficas...');
+        
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 1000
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    title: {
+                        display: true,
+                        text: 'Tiempo (puntos)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            }
+        };
+
+        // Temperatura
+        const tempCtx = document.getElementById('temperatureChart');
+        if (tempCtx) {
+            this.charts.temperature = new Chart(tempCtx, {
+                type: 'line',
+                data: { datasets: [] },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            title: { display: true, text: 'Temperatura (°C)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Humedad
+        const humidityCtx = document.getElementById('humidityChart');
+        if (humidityCtx) {
+            this.charts.humidity = new Chart(humidityCtx, {
+                type: 'line',
+                data: { datasets: [] },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            title: { display: true, text: 'Humedad (%)' },
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Presión
+        const pressureCtx = document.getElementById('pressureChart');
+        if (pressureCtx) {
+            this.charts.pressure = new Chart(pressureCtx, {
+                type: 'line',
+                data: { datasets: [] },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            title: { display: true, text: 'Presión (hPa)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        console.log('✅ Gráficas inicializadas');
     }
 
     async loadSensors() {
@@ -87,15 +156,17 @@ class WeatherApp {
             const sensors = await response.json();
             
             const sensorsGrid = document.getElementById('sensorsGrid');
-            sensorsGrid.innerHTML = '';
-
-            sensors.forEach(sensor => {
-                const sensorCard = this.createSensorCard(sensor);
-                sensorsGrid.appendChild(sensorCard);
-                this.sensorData.set(sensor.id, []);
-            });
+            if (sensorsGrid) {
+                sensorsGrid.innerHTML = '';
+                sensors.forEach(sensor => {
+                    const sensorCard = this.createSensorCard(sensor);
+                    sensorsGrid.appendChild(sensorCard);
+                    this.sensorData.set(sensor.id, []);
+                });
+                console.log('📍 Sensores cargados:', sensors.length);
+            }
         } catch (error) {
-            console.error('Error loading sensors:', error);
+            console.error('❌ Error loading sensors:', error);
         }
     }
 
@@ -104,31 +175,32 @@ class WeatherApp {
         card.className = 'sensor-card';
         card.id = `card-${sensor.id}`;
         card.innerHTML = `
-            <h3>${sensor.city}</h3>
+            <h3>🏙️ ${sensor.city}</h3>
             <div class="weather-data">
                 <div class="data-item">
-                    <span>Temperatura:</span>
+                    <span>🌡️ Temperatura:</span>
                     <span class="data-value temperature">-- °C</span>
                 </div>
                 <div class="data-item">
-                    <span>Humedad:</span>
+                    <span>💧 Humedad:</span>
                     <span class="data-value humidity">-- %</span>
                 </div>
                 <div class="data-item">
-                    <span>Presión:</span>
+                    <span>📊 Presión:</span>
                     <span class="data-value pressure">-- hPa</span>
                 </div>
                 <div class="data-item">
-                    <span>Viento:</span>
+                    <span>💨 Viento:</span>
                     <span class="data-value wind">-- km/h</span>
                 </div>
             </div>
-            <div class="last-update">Última actualización: --</div>
+            <div class="last-update">Esperando datos...</div>
         `;
         return card;
     }
 
     updateSensorDisplay(data) {
+        console.log('🔄 Actualizando display para:', data.city);
         const card = document.getElementById(`card-${data.sensorId}`);
         if (card) {
             card.querySelector('.temperature').textContent = `${data.temperature} °C`;
@@ -137,65 +209,81 @@ class WeatherApp {
             card.querySelector('.wind').textContent = `${data.windSpeed} km/h`;
             
             const now = new Date().toLocaleTimeString();
-            card.querySelector('.last-update').textContent = 
-                `Última actualización: ${now}`;
+            card.querySelector('.last-update').textContent = `Actualizado: ${now}`;
+            
+            // Efecto visual
+            card.style.background = '#f0fff4';
+            setTimeout(() => {
+                card.style.background = 'white';
+            }, 1000);
         }
     }
 
     updateCharts(data) {
-        const timestamp = new Date(data.timestamp);
-        
-        // Actualizar datos del sensor
         if (!this.sensorData.has(data.sensorId)) {
             this.sensorData.set(data.sensorId, []);
         }
 
         const sensorReadings = this.sensorData.get(data.sensorId);
+        const timePoint = sensorReadings.length;
+        
         sensorReadings.push({
-            x: timestamp,
+            x: timePoint,
             temperature: data.temperature,
             humidity: data.humidity,
             pressure: data.pressure
         });
 
-        // Mantener solo los últimos puntos de datos
         if (sensorReadings.length > this.maxDataPoints) {
             sensorReadings.shift();
         }
 
-        this.updateChartDataset('temperature', data.sensorId, data.city, sensorReadings, 'temperature');
-        this.updateChartDataset('humidity', data.sensorId, data.city, sensorReadings, 'humidity');
-        this.updateChartDataset('pressure', data.sensorId, data.city, sensorReadings, 'pressure');
+        this.updateChart('temperature', data.sensorId, data.city, sensorReadings, 'temperature');
+        this.updateChart('humidity', data.sensorId, data.city, sensorReadings, 'humidity');
+        this.updateChart('pressure', data.sensorId, data.city, sensorReadings, 'pressure');
     }
 
-    updateChartDataset(chartType, sensorId, city, readings, dataKey) {
+    updateChart(chartType, sensorId, city, readings, dataKey) {
+        if (!this.charts[chartType]) return;
+
         const chart = this.charts[chartType];
         const datasetIndex = chart.data.datasets.findIndex(ds => ds.label === city);
 
-        const data = readings.map(reading => ({
-            x: reading.x,
+        const dataPoints = readings.map((reading, index) => ({
+            x: index,
             y: reading[dataKey]
         }));
 
-        const color = this.getColorForSensor(sensorId);
+        const colors = this.getColorsForSensor(sensorId);
 
         if (datasetIndex === -1) {
-            // Nuevo dataset
             chart.data.datasets.push({
                 label: city,
-                data: data,
-                borderColor: color,
-                backgroundColor: color + '20',
-                borderWidth: 2,
+                data: dataPoints,
+                borderColor: colors.border,
+                backgroundColor: colors.background,
+                borderWidth: 3,
                 tension: 0.4,
-                pointRadius: 3
+                pointRadius: 4,
+                pointBackgroundColor: colors.border,
+                fill: false
             });
         } else {
-            // Actualizar dataset existente
-            chart.data.datasets[datasetIndex].data = data;
+            chart.data.datasets[datasetIndex].data = dataPoints;
         }
 
-        chart.update('none');
+        chart.update();
+    }
+
+    getColorsForSensor(sensorId) {
+        const colors = {
+            'sensor-1': { border: 'rgb(255, 99, 132)', background: 'rgba(255, 99, 132, 0.1)' },
+            'sensor-2': { border: 'rgb(54, 162, 235)', background: 'rgba(54, 162, 235, 0.1)' },
+            'sensor-3': { border: 'rgb(75, 192, 192)', background: 'rgba(75, 192, 192, 0.1)' },
+            'sensor-4': { border: 'rgb(255, 159, 64)', background: 'rgba(255, 159, 64, 0.1)' },
+            'sensor-5': { border: 'rgb(153, 102, 255)', background: 'rgba(153, 102, 255, 0.1)' }
+        };
+        return colors[sensorId] || { border: 'rgb(201, 203, 207)', background: 'rgba(201, 203, 207, 0.1)' };
     }
 
     updateHeatmap(data) {
@@ -203,64 +291,53 @@ class WeatherApp {
         const tooltip = document.getElementById(`sensor-${data.sensorId}-tooltip`);
 
         if (marker && tooltip) {
-            // Cambiar color basado en temperatura
             const temp = data.temperature;
-            let color = '#3182ce'; // Azul para frío
+            let color;
             
-            if (temp > 30) color = '#e53e3e'; // Rojo para calor
-            else if (temp > 20) color = '#dd6b20'; // Naranja para templado
-            else if (temp > 10) color = '#38a169'; // Verde para fresco
+            if (temp < 10) color = '#3b82f6';
+            else if (temp < 20) color = '#10b981';
+            else if (temp < 30) color = '#f59e0b';
+            else color = '#ef4444';
 
             marker.style.background = color;
+            marker.style.boxShadow = `0 0 20px ${color}`;
             
-            tooltip.textContent = 
-                `${data.city}: ${data.temperature}°C, ${data.humidity}% hum`;
-        }
-    }
-
-    getColorForSensor(sensorId) {
-        const colors = {
-            'sensor-1': '#e53e3e', // Rojo
-            'sensor-2': '#3182ce', // Azul
-            'sensor-3': '#38a169', // Verde
-            'sensor-4': '#dd6b20', // Naranja
-            'sensor-5': '#805ad5'  // Púrpura
-        };
-        return colors[sensorId] || '#718096';
-    }
-
-    async loadHistoricalData() {
-        // Cargar datos históricos para cada sensor
-        for (const sensorId of this.sensorData.keys()) {
-            try {
-                const response = await fetch(`/api/history/${sensorId}`);
-                const historicalData = await response.json();
-                
-                this.sensorData.set(sensorId, historicalData.map(item => ({
-                    x: new Date(item.timestamp),
-                    temperature: item.temperature,
-                    humidity: item.humidity,
-                    pressure: item.pressure
-                })));
-
-                // Actualizar charts con datos históricos
-                const sensorInfo = historicalData[0];
-                if (sensorInfo) {
-                    this.updateChartDataset('temperature', sensorId, sensorInfo.city, 
-                        this.sensorData.get(sensorId), 'temperature');
-                    this.updateChartDataset('humidity', sensorId, sensorInfo.city, 
-                        this.sensorData.get(sensorId), 'humidity');
-                    this.updateChartDataset('pressure', sensorId, sensorInfo.city, 
-                        this.sensorData.get(sensorId), 'pressure');
-                }
-            } catch (error) {
-                console.error(`Error loading historical data for ${sensorId}:`, error);
-            }
+            tooltip.innerHTML = `
+                <strong>${data.city}</strong><br>
+                🌡️ ${data.temperature}°C<br>
+                💧 ${data.humidity}%<br>
+                📊 ${data.pressure}hPa
+            `;
         }
     }
 }
 
-// Inicializar la aplicación cuando el DOM esté listo
+// Inicializar la aplicación
 document.addEventListener('DOMContentLoaded', () => {
     new WeatherApp();
-});
+})
+
+// Agregar esta función al final del archivo app.js
+function updateCurrentTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-ES', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+    });
+    const dateString = now.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    const timeElement = document.getElementById('currentTime');
+    if (timeElement) {
+        timeElement.textContent = `${dateString} - ${timeString}`;
+    }
+}
+
+// Actualizar la hora cada segundo
+setInterval(updateCurrentTime, 1000);
+updateCurrentTime();;

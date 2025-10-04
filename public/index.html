@@ -3,62 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema IoT - Monitoreo Climático</title>
+    <title>🌤️ Sistema IoT - Monitoreo Climático en Tiempo Real</title>
+    
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🌤️ Sistema IoT - Monitoreo Climático en Tiempo Real</h1>
-            <p>Datos de sensores distribuidos globalmente</p>
+        <header class="glass-effect">
+            <h1><i class="fas fa-cloud-sun"></i> Sistema IoT - Monitoreo Climático</h1>
+            <p>Datos en tiempo real de sensores distribuidos globalmente</p>
         </header>
 
-        <div class="sensors-grid" id="sensorsGrid">
-            <!-- Los sensores se cargan dinámicamente -->
-        </div>
+        <!-- Panel de Sensores -->
+        <section class="sensors-section">
+            <h2><i class="fas fa-satellite"></i> Sensores Activos</h2>
+            <div class="sensors-grid" id="sensorsGrid">
+                <!-- Los sensores se cargan dinámicamente -->
+            </div>
+        </section>
 
-        <div class="charts-container">
-            <div class="chart-section">
-                <h2>Temperatura vs Tiempo</h2>
-                <canvas id="temperatureChart"></canvas>
-            </div>
-            
-            <div class="chart-section">
-                <h2>Humedad vs Tiempo</h2>
-                <canvas id="humidityChart"></canvas>
-            </div>
-            
-            <div class="chart-section">
-                <h2>Presión vs Tiempo</h2>
-                <canvas id="pressureChart"></canvas>
-            </div>
-        </div>
-
-        <div class="heatmap-section">
-            <h2>Mapa de Calor - Temperaturas Globales</h2>
-            <div id="heatmapContainer">
-                <div class="world-map">
-                    <!-- Mapa simplificado con sensores -->
-                    <div class="sensor-marker" id="sensor-1-marker" style="top: 30%; left: 25%;">
-                        <div class="tooltip" id="sensor-1-tooltip"></div>
+        <!-- Gráficas en Tiempo Real -->
+        <section class="charts-section">
+            <h2><i class="fas fa-chart-line"></i> Métricas en Tiempo Real</h2>
+            <div class="charts-container">
+                <div class="chart-section">
+                    <h2><i class="fas fa-thermometer-half"></i> Temperatura vs Tiempo</h2>
+                    <div class="chart-wrapper">
+                        <canvas id="temperatureChart"></canvas>
                     </div>
-                    <div class="sensor-marker" id="sensor-2-marker" style="top: 25%; left: 48%;">
-                        <div class="tooltip" id="sensor-2-tooltip"></div>
+                </div>
+                
+                <div class="chart-section">
+                    <h2><i class="fas fa-tint"></i> Humedad vs Tiempo</h2>
+                    <div class="chart-wrapper">
+                        <canvas id="humidityChart"></canvas>
                     </div>
-                    <div class="sensor-marker" id="sensor-3-marker" style="top: 35%; left: 80%;">
-                        <div class="tooltip" id="sensor-3-tooltip"></div>
-                    </div>
-                    <div class="sensor-marker" id="sensor-4-marker" style="top: 65%; left: 85%;">
-                        <div class="tooltip" id="sensor-4-tooltip"></div>
-                    </div>
-                    <div class="sensor-marker" id="sensor-5-marker" style="top: 45%; left: 65%;">
-                        <div class="tooltip" id="sensor-5-tooltip"></div>
+                </div>
+                
+                <div class="chart-section">
+                    <h2><i class="fas fa-gauge-high"></i> Presión vs Tiempo</h2>
+                    <div class="chart-wrapper">
+                        <canvas id="pressureChart"></canvas>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
+
+        <!-- Mapa de Calor -->
+        <section class="heatmap-section">
+            <h2><i class="fas fa-globe-americas"></i> Mapa de Calor Global</h2>
+            <div class="world-map">
+                <div class="sensor-marker" id="sensor-1-marker" style="top: 30%; left: 25%;">
+                    <div class="tooltip" id="sensor-1-tooltip">
+                        <strong>New York</strong><br>
+                        🌡️ --°C<br>
+                        💧 --%<br>
+                        📊 --hPa
+                    </div>
+                </div>
+                <div class="sensor-marker" id="sensor-2-marker" style="top: 25%; left: 48%;">
+                    <div class="tooltip" id="sensor-2-tooltip">
+                        <strong>London</strong><br>
+                        🌡️ --°C<br>
+                        💧 --%<br>
+                        📊 --hPa
+                    </div>
+                </div>
+                <div class="sensor-marker" id="sensor-3-marker" style="top: 35%; left: 80%;">
+                    <div class="tooltip" id="sensor-3-tooltip">
+                        <strong>Tokyo</strong><br>
+                        🌡️ --°C<br>
+                        💧 --%<br>
+                        📊 --hPa
+                    </div>
+                </div>
+                <div class="sensor-marker" id="sensor-4-marker" style="top: 65%; left: 85%;">
+                    <div class="tooltip" id="sensor-4-tooltip">
+                        <strong>Sydney</strong><br>
+                        🌡️ --°C<br>
+                        💧 --%<br>
+                        📊 --hPa
+                    </div>
+                </div>
+                <div class="sensor-marker" id="sensor-5-marker" style="top: 45%; left: 65%;">
+                    <div class="tooltip" id="sensor-5-tooltip">
+                        <strong>Mumbai</strong><br>
+                        🌡️ --°C<br>
+                        💧 --%<br>
+                        📊 --hPa
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>🚀 Sistema IoT - Monitoreo Climático | Tiempo Real | <span id="currentTime"></span></p>
+        </footer>
     </div>
 
     <script src="app.js"></script>
