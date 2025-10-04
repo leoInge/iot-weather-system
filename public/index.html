@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema IoT - Monitoreo Climático</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌤️ Sistema IoT - Monitoreo Climático en Tiempo Real</h1>
+            <p>Datos de sensores distribuidos globalmente</p>
+        </header>
+
+        <div class="sensors-grid" id="sensorsGrid">
+            <!-- Los sensores se cargan dinámicamente -->
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-section">
+                <h2>Temperatura vs Tiempo</h2>
+                <canvas id="temperatureChart"></canvas>
+            </div>
+            
+            <div class="chart-section">
+                <h2>Humedad vs Tiempo</h2>
+                <canvas id="humidityChart"></canvas>
+            </div>
+            
+            <div class="chart-section">
+                <h2>Presión vs Tiempo</h2>
+                <canvas id="pressureChart"></canvas>
+            </div>
+        </div>
+
+        <div class="heatmap-section">
+            <h2>Mapa de Calor - Temperaturas Globales</h2>
+            <div id="heatmapContainer">
+                <div class="world-map">
+                    <!-- Mapa simplificado con sensores -->
+                    <div class="sensor-marker" id="sensor-1-marker" style="top: 30%; left: 25%;">
+                        <div class="tooltip" id="sensor-1-tooltip"></div>
+                    </div>
+                    <div class="sensor-marker" id="sensor-2-marker" style="top: 25%; left: 48%;">
+                        <div class="tooltip" id="sensor-2-tooltip"></div>
+                    </div>
+                    <div class="sensor-marker" id="sensor-3-marker" style="top: 35%; left: 80%;">
+                        <div class="tooltip" id="sensor-3-tooltip"></div>
+                    </div>
+                    <div class="sensor-marker" id="sensor-4-marker" style="top: 65%; left: 85%;">
+                        <div class="tooltip" id="sensor-4-tooltip"></div>
+                    </div>
+                    <div class="sensor-marker" id="sensor-5-marker" style="top: 45%; left: 65%;">
+                        <div class="tooltip" id="sensor-5-tooltip"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
