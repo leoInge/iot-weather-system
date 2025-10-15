@@ -9,13 +9,13 @@ class WeatherApp {
         this.sensorData = new Map();
         this.maxDataPoints = 20;
         this.isInitialized = false;
-        
+
         this.init();
     }
 
     init() {
         console.log('🚀 Inicializando aplicación de clima...');
-        
+
         this.socket.on('connect', () => {
             console.log('✅ Conectado al servidor WebSocket. ID:', this.socket.id);
             this.loadSensors();
@@ -66,7 +66,7 @@ class WeatherApp {
 
     initializeCharts() {
         console.log('📊 Inicializando gráficas...');
-        
+
         const chartOptions = {
             responsive: true,
             maintainAspectRatio: false,
@@ -154,7 +154,7 @@ class WeatherApp {
         try {
             const response = await fetch('/api/sensors');
             const sensors = await response.json();
-            
+
             const sensorsGrid = document.getElementById('sensorsGrid');
             if (sensorsGrid) {
                 sensorsGrid.innerHTML = '';
@@ -207,10 +207,10 @@ class WeatherApp {
             card.querySelector('.humidity').textContent = `${data.humidity} %`;
             card.querySelector('.pressure').textContent = `${data.pressure} hPa`;
             card.querySelector('.wind').textContent = `${data.windSpeed} km/h`;
-            
+
             const now = new Date().toLocaleTimeString();
             card.querySelector('.last-update').textContent = `Actualizado: ${now}`;
-            
+
             // Efecto visual
             card.style.background = '#f0fff4';
             setTimeout(() => {
@@ -226,7 +226,7 @@ class WeatherApp {
 
         const sensorReadings = this.sensorData.get(data.sensorId);
         const timePoint = sensorReadings.length;
-        
+
         sensorReadings.push({
             x: timePoint,
             temperature: data.temperature,
@@ -287,21 +287,27 @@ class WeatherApp {
     }
 
     updateHeatmap(data) {
-        const marker = document.getElementById(`sensor-${data.sensorId}-marker`);
-        const tooltip = document.getElementById(`sensor-${data.sensorId}-tooltip`);
+        // La corrección está en las siguientes 2 líneas
+        const marker = document.getElementById(`${data.sensorId}-marker`);
+        const tooltip = document.getElementById(`${data.sensorId}-tooltip`);
 
         if (marker && tooltip) {
             const temp = data.temperature;
             let color;
-            
-            if (temp < 10) color = '#3b82f6';
-            else if (temp < 20) color = '#10b981';
-            else if (temp < 30) color = '#f59e0b';
-            else color = '#ef4444';
+
+            if (temp < 10) color = '#3b82f6'; // Azul
+            else if (temp < 20) color = '#10b981'; // Verde
+            else if (temp < 30) color = '#f59e0b'; // Naranja
+            else color = '#ef4444'; // Rojo
 
             marker.style.background = color;
-            marker.style.boxShadow = `0 0 20px ${color}`;
-            
+            // Opcional: He mejorado un poco la sombra para que use el color dinámico
+            marker.style.boxShadow = `
+                0 4px 15px rgba(0, 0, 0, 0.3),
+                0 0 0 2px rgba(255, 255, 255, 0.8),
+                0 0 20px ${color} 
+            `;
+
             tooltip.innerHTML = `
                 <strong>${data.city}</strong><br>
                 🌡️ ${data.temperature}°C<br>
@@ -320,10 +326,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // Agregar esta función al final del archivo app.js
 function updateCurrentTime() {
     const now = new Date();
-    const timeString = now.toLocaleTimeString('es-ES', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit' 
+    const timeString = now.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
     });
     const dateString = now.toLocaleDateString('es-ES', {
         weekday: 'long',
@@ -331,7 +337,7 @@ function updateCurrentTime() {
         month: 'long',
         day: 'numeric'
     });
-    
+
     const timeElement = document.getElementById('currentTime');
     if (timeElement) {
         timeElement.textContent = `${dateString} - ${timeString}`;
