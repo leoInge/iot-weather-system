@@ -14,7 +14,7 @@ class WeatherPublisher {
             { id: 'sensor-5', city: 'Mumbai', lat: 19.0760, lon: 72.8777 }
         ];
 
-                this.openWeatherApiKey = "6ce4a61c7e1b6ee21f39297344500d68"; 
+                this.openWeatherApiKey = "API_KEY"; 
 
         this.init();
     }
