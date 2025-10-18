@@ -13,6 +13,9 @@ class WeatherPublisher {
             { id: 'sensor-4', city: 'Sydney', lat: -33.8688, lon: 151.2093 },
             { id: 'sensor-5', city: 'Mumbai', lat: 19.0760, lon: 72.8777 }
         ];
+
+                this.openWeatherApiKey = "6ce4a61c7e1b6ee21f39297344500d68"; 
+
         this.init();
     }
 
@@ -46,40 +49,83 @@ class WeatherPublisher {
         }
     }
 
+ // --- Open-Meteo ---
+    async fetchWeatherData(sensor) {
+        try {
+            const response = await axios.get(
+                `https://api.open-meteo.com/v1/forecast?latitude=${sensor.lat}&longitude=${sensor.lon}&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m`
+            );
+
+            const data = response.data.current;
+            return {
+                sensorId: sensor.id,
+                city: sensor.city,
+                latitude: sensor.lat,
+                longitude: sensor.lon,
+                temperature: data.temperature_2m,
+                humidity: data.relative_humidity_2m,
+                pressure: data.surface_pressure,
+                windSpeed: data.wind_speed_10m,
+                timestamp: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error(`❌ Error con Open-Meteo (${sensor.city}):`, error.message);
+            return null;
+        }
+    }
+
+    // --- OpenWeather (solo para el mapa de calor) ---
+    async fetchOpenWeatherData(sensor) {
+        try {
+            const url = `https://api.openweathermap.org/data/2.5/weather?lat=${sensor.lat}&lon=${sensor.lon}&units=metric&appid=${this.openWeatherApiKey}`;
+            const response = await axios.get(url);
+            const data = response.data;
+
+            return {
+                city: data.name,
+                lat: data.coord.lat,
+                lon: data.coord.lon,
+                temp: data.main.temp,
+                humidity: data.main.humidity,
+                pressure: data.main.pressure,
+                condition: data.weather[0].description
+            };
+        } catch (error) {
+            console.error(`❌ Error con OpenWeather (${sensor.city}):`, error.message);
+            return null;
+        }
+    }
+
     async publishWeatherData() {
         for (const sensor of this.sensors) {
-            const weatherData = await this.fetchWeatherData(sensor);
-            
-            if (weatherData) {
+            const meteoData = await this.fetchWeatherData(sensor);
+            const openWeatherData = await this.fetchOpenWeatherData(sensor);
+
+            if (meteoData) {
+                // Combinar ambos conjuntos de datos
+                const combinedData = {
+                    ...meteoData,
+                    openWeather: openWeatherData || {}
+                };
+
                 // Publicar en canal Redis
-                await this.redisClient.publish('weather-updates', JSON.stringify(weatherData));
-                
-                // Almacinar en Redis para histórico
+                await this.redisClient.publish('weather-updates', JSON.stringify(combinedData));
+
+                // Guardar histórico en Redis
                 await this.redisClient.lPush(
-                    `sensor:${sensor.id}:readings`, 
-                    JSON.stringify(weatherData)
+                    `sensor:${sensor.id}:readings`,
+                    JSON.stringify(combinedData)
                 );
-                
-                // Mantener solo los últimos 100 registros
                 await this.redisClient.lTrim(`sensor:${sensor.id}:readings`, 0, 99);
-                
-                console.log(`Datos publicados para ${sensor.city}:`, {
-                    temp: weatherData.temperature,
-                    humidity: weatherData.humidity,
-                    pressure: weatherData.pressure
-                });
+
+                console.log(`📡 Datos publicados (${sensor.city}): ${meteoData.temperature}°C`);
             }
         }
     }
 
     startPublishing() {
-        // Publicar cada 10 segundos
-        setInterval(() => {
-            this.publishWeatherData();
-        }, 10000);
-
-        // Publicar inmediatamente al inicio
-        this.publishWeatherData();
+        this.publishWeatherData(); // primera publicación inmediata
+        setInterval(() => this.publishWeatherData(), 10000); // cada 10 seg
     }
 }
 

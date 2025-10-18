@@ -32,6 +32,23 @@ class WeatherApp {
             this.updateHeatmap(data);
         });
 
+        // Inicializar mapa centrado en el mundo
+        this.map = L.map('map').setView([20, 0], 2);
+
+        // Capa base
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors/OpenWeather'
+        }).addTo(this.map);
+
+        // Capa de calor global de OpenWeather (temperatura)
+        this.heatmapLayer = L.tileLayer(
+            `https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=API_KEY`,
+            { opacity: 0.9 }
+        ).addTo(this.map);
+
+        // Marcadores de sensores
+        this.sensorMarkers = {};
+
         this.socket.on('disconnect', (reason) => {
             console.log('❌ Desconectado del servidor:', reason);
         });
